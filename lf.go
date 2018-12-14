@@ -5,17 +5,10 @@ import (
 	"io"
 )
 
-// LFfromCRLF is a `io.Reader` that converts CRLF
-// sequences to LF.
-//
-// This structure wraps an io.Reader that modifies the streams's contents when
-// it is read, translating all CRLF sequences to LF.
 type LFfromCRLF struct {
-	Source          io.Reader // source io.Reader from which this reads
-	prevReadEndedCR bool      // used to track whether final byte of previous Read was CR
+	Source          io.Reader
+	prevReadEndedCR bool
 }
-
-var crlf = []byte("\r\n")
 
 // Read consumes bytes from the structure's source io.Reader to fill the
 // specified slice of bytes. It converts all CRLF byte sequences to LF, and

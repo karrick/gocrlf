@@ -1,38 +1,26 @@
-package gocrlf
+package gocrlf_test
 
 import (
 	"bytes"
 	"io"
 	"testing"
+
+	"github.com/karrick/gocrlf"
 )
 
-// crossBuffer is a test io.Reader that emits a few canned responses.
-type crossBuffer struct {
-	readCount  int
-	iterations []string
-}
-
-func (cb *crossBuffer) Read(buf []byte) (int, error) {
-	if cb.readCount == len(cb.iterations) {
-		return 0, io.EOF
+func TestLFfromCRLF(t *testing.T) {
+	stream := func(t *testing.T, iterations []string) []byte {
+		dst := new(bytes.Buffer)
+		n, err := io.Copy(dst, &gocrlf.LFfromCRLF{Source: &crossBuffer{iterations: iterations}})
+		if got, want := err, error(nil); got != want {
+			t.Errorf("(GOT): %v; (WNT): %v", got, want)
+		}
+		if got, want := n, int64(dst.Len()); got != want {
+			t.Errorf("(GOT): %v; (WNT): %v", got, want)
+		}
+		return dst.Bytes()
 	}
-	cb.readCount++
-	return copy(buf, cb.iterations[cb.readCount-1]), nil
-}
 
-func streamThruLineEndingReader(t *testing.T, iterations []string) []byte {
-	dst := new(bytes.Buffer)
-	n, err := io.Copy(dst, &LFfromCRLF{Source: &crossBuffer{iterations: iterations}})
-	if got, want := err, error(nil); got != want {
-		t.Errorf("(GOT): %v; (WNT): %v", got, want)
-	}
-	if got, want := n, int64(dst.Len()); got != want {
-		t.Errorf("(GOT): %v; (WNT): %v", got, want)
-	}
-	return dst.Bytes()
-}
-
-func TestLineEndingReader(t *testing.T) {
 	testCases := []struct {
 		input  []string
 		output string
@@ -77,7 +65,7 @@ func TestLineEndingReader(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		got := streamThruLineEndingReader(t, testCase.input)
+		got := stream(t, testCase.input)
 		if want := []byte(testCase.output); !bytes.Equal(got, want) {
 			t.Errorf("Input: %#v; (GOT): %#q; (WNT): %#q", testCase.input, got, want)
 		}
