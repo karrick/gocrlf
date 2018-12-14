@@ -5,6 +5,8 @@ import (
 	"io"
 )
 
+var crlf = []byte("\r\n")
+
 type LFfromCRLF struct {
 	Source          io.Reader
 	prevReadEndedCR bool
