@@ -13,6 +13,8 @@ import (
 func main() {
 	// implement dos2unix like command
 
+	flag.Parse()
+
 	var ior io.Reader
 	if flag.NArg() == 0 {
 		ior = os.Stdin
