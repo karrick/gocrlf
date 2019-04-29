@@ -22,7 +22,7 @@ func (cb *crossBuffer) Read(buf []byte) (int, error) {
 
 func streamThruLineEndingReader(t *testing.T, iterations []string) []byte {
 	dst := new(bytes.Buffer)
-	n, err := io.Copy(dst, &LFfromCRLF{Source: &crossBuffer{iterations: iterations}})
+	n, err := io.Copy(dst, &CRLFfromLF{Source: &crossBuffer{iterations: iterations}})
 	if got, want := err, error(nil); got != want {
 		t.Errorf("(GOT): %v; (WNT): %v", got, want)
 	}

@@ -5,12 +5,11 @@ import (
 	"io"
 )
 
-// LFfromCRLF is a `io.Reader` that converts CRLF
-// sequences to LF.
+// CRLFfromLF is a `io.Reader` that converts LF sequences to CRLF.
 //
 // This structure wraps an io.Reader that modifies the streams's contents when
-// it is read, translating all CRLF sequences to LF.
-type LFfromCRLF struct {
+// it is read, translating all LF sequences to CRLF.
+type CRLFfromLF struct {
 	Source          io.Reader // source io.Reader from which this reads
 	prevReadEndedCR bool      // used to track whether final byte of previous Read was CR
 }
@@ -18,9 +17,9 @@ type LFfromCRLF struct {
 var crlf = []byte("\r\n")
 
 // Read consumes bytes from the structure's source io.Reader to fill the
-// specified slice of bytes. It converts all CRLF byte sequences to LF, and
+// specified slice of bytes. It converts all LF byte sequences to CRLF, and
 // handles cases where CR and LF straddle across two Read operations.
-func (f *LFfromCRLF) Read(buf []byte) (int, error) {
+func (f *CRLFfromLF) Read(buf []byte) (int, error) {
 	buflen := len(buf)
 	if f.prevReadEndedCR {
 		// Read one fewer bytes so we have room if the first byte of the

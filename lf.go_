@@ -1,0 +1,31 @@
+package gocrlf
+
+import (
+	"bytes"
+	"io"
+)
+
+type LFfromCRLF struct {
+	Source io.Reader
+}
+
+func (f *LFfromCRLF) Read(buf []byte) (int, error) {
+	nr, er := f.Source.Read(buf)
+	if nr > 0 {
+
+		var searchOffset int // index within buffer from whence the search will commence for each loop; set to the index of the end of the previous loop.
+		var shiftCount int   // each subsequenct shift operation needs to shift bytes to the left by one more position than the shift that preceded it.
+		previousIndex := -1  // index of previously found CRLF; -1 means no previous index
+
+		for {
+			index := bytes.Index(buf[searchOffset:nr], crlf)
+			if index == -1 {
+				break // out of for loop
+			}
+			index += searchOffset // convert relative index to absolute
+			if previousIndex != -1 {
+
+			}
+		}
+	}
+}

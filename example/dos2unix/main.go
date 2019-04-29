@@ -10,7 +10,7 @@ import (
 
 func main() {
 	// implement dos2unix like command
-	_, err := io.Copy(os.Stdout, &gocrlf.LFfromCRLF{Source: os.Stdin})
+	_, err := io.Copy(os.Stdout, &gocrlf.CRLFfromLF{Source: os.Stdin})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
 		os.Exit(1)
