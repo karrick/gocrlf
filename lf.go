@@ -7,11 +7,11 @@ import (
 
 var crlf = []byte("\r\n")
 
-// LFfromCRLF is an io.Reader whose Read method converts CRLF sequences to LF
-// bytes.
+// LFfromCRLF is an io.Reader whose Read method converts CRLF byte sequences
+// to LF bytes.
 type LFfromCRLF struct {
-	Source          io.Reader
-	prevReadEndedCR bool
+	R          io.Reader
+	isPrevByteCR bool
 }
 
 // Read consumes bytes from the structure's source io.Reader to fill the
@@ -19,15 +19,15 @@ type LFfromCRLF struct {
 // handles cases where CR and LF straddle across two Read operations.
 func (f *LFfromCRLF) Read(buf []byte) (int, error) {
 	buflen := len(buf)
-	if f.prevReadEndedCR {
+	if f.isPrevByteCR {
 		// Read one fewer bytes so we have room if the first byte of the
 		// upcoming Read is not a LF, in which case we will need to insert
 		// trailing CR from previous read.
 		buflen--
 	}
-	nr, er := f.Source.Read(buf[:buflen])
+	nr, er := f.R.Read(buf[:buflen])
 	if nr > 0 {
-		if f.prevReadEndedCR && buf[0] != '\n' {
+		if f.isPrevByteCR && buf[0] != '\n' {
 			// Having a CRLF split across two Read operations is rare, so the
 			// performance impact of copying entire buffer to the right by one
 			// byte, while suboptimal, will at least will not happen very
@@ -39,13 +39,13 @@ func (f *LFfromCRLF) Read(buf []byte) (int, error) {
 			// complete, but is significantly faster than the application
 			// looping through bytes.
 			copy(buf[1:nr+1], buf[:nr]) // shift data to right one byte
-			buf[0] = '\r'               // insert the previous skipped CR byte at start of buf
-			nr++                        // pretend we read one more byte
+			buf[0] = '\r'               // insert CR at first byte
+			nr++						// pretend we read one additional byte
 		}
 
-		// Remove any CRLF sequences in the buffer using `bytes.Index` because,
-		// like the `copy` builtin on many GOARCHs, it also takes advantage of a
-		// machine opcode to search for byte patterns.
+		// Remove any CRLF byte sequences in the buffer using `bytes.Index`
+		// because, like the `copy` builtin on many GOARCHs, it also takes
+		// advantage of a machine opcode to search for byte patterns.
 
 		// searchOffset is index within buffer from whence the search will
 		// commence for each loop; set to the index of the end of the previous
@@ -82,27 +82,32 @@ func (f *LFfromCRLF) Read(buf []byte) (int, error) {
 
 		// When final byte from a read operation is CR, do not emit it until
 		// ensure first byte on next read is not LF.
-		if f.prevReadEndedCR = buf[nr-1] == '\r'; f.prevReadEndedCR {
+		if f.isPrevByteCR = buf[nr-1] == '\r'; f.isPrevByteCR {
 			nr-- // pretend byte was never read from source
 		}
-	} else if f.prevReadEndedCR {
-		// Reading from source returned nothing, but this struct is sitting on a
-		// trailing CR from previous Read, so let's give it to client now.
+	} else if f.isPrevByteCR {
+		// Reading from source returned nothing, but this struct is sitting on
+		// a trailing CR byte from previous Read, so let's give the CR to
+		// client.
 		buf[0] = '\r'
 		nr = 1
 		er = nil
-		f.prevReadEndedCR = false // prevent infinite loop
+		f.isPrevByteCR = false // prevent infinite loop
 	}
 	return nr, er
 }
 
 // LFfromCRorCRLF is an io.Reader whose Read method converts bare CR bytes or
-// CRLF sequences to LF bytes.
+// CRLF byte sequences to LF bytes.
 type LFfromCRorCRLF struct {
 	R            io.Reader
 	isPrevByteCR bool
 }
 
+// Read consumes bytes from the structure's source io.Reader to fill the
+// specified slice of bytes. It converts all bare CR bytes and CRLF byte
+// sequences to LF, and handles cases where CR and LF straddle across two Read
+// operations.
 func (f *LFfromCRorCRLF) Read(buf []byte) (int, error) {
 	buflen := len(buf)
 	if f.isPrevByteCR {
@@ -131,9 +136,9 @@ func (f *LFfromCRorCRLF) Read(buf []byte) (int, error) {
 				// instantaneous and requires multiple CPU cycles to complete,
 				// but is significantly faster than the application looping
 				// through bytes.
-				copy(buf[1:nr+1], buf[:nr]) // shift to the right
-				buf[0] = '\n'
-				nr++
+				copy(buf[1:nr+1], buf[:nr]) // shift data to right one byte
+				buf[0] = '\n'				// insert LF at first byte
+				nr++						// pretend we read one additional byte
 				index++ // optimization
 			}
 		}
@@ -166,7 +171,10 @@ func (f *LFfromCRorCRLF) Read(buf []byte) (int, error) {
 			index = indexPlusOne // start search at next byte
 		}
 	} else if f.isPrevByteCR {
-		buf[0] = '\n' // Final LF from CR
+		// Reading from source returned nothing, but this struct is sitting on
+		// a trailing CR byte from previous Read, so let's give a LF to
+		// client.
+		buf[0] = '\n'
 		nr = 1
 		er = nil
 		f.isPrevByteCR = false

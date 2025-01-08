@@ -20,7 +20,7 @@ func main() {
 	var err error
 
 	if flag.NArg() == 0 {
-		_, err = io.Copy(os.Stdout, &gocrlf.LFfromCRLF{Source: ior})
+		_, err = io.Copy(os.Stdout, &gocrlf.LFfromCRLF{R: ior})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s: %s\n", progname, err)
 			os.Exit(1)
@@ -34,7 +34,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "%s: %s\n", progname, err)
 			continue
 		}
-		_, err = io.Copy(os.Stdout, &gocrlf.LFfromCRLF{Source: ior})
+		_, err = io.Copy(os.Stdout, &gocrlf.LFfromCRLF{R: ior})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s: %s\n", progname, err)
 		}

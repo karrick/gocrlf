@@ -53,7 +53,7 @@ func TestLFfromCRLF(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.output, func(t *testing.T) {
-			got := readAllWithChecks(t, &gocrlf.LFfromCRLF{Source: &stagedReader{Stages: testCase.input}})
+			got := readAllWithChecks(t, &gocrlf.LFfromCRLF{R: &stagedReader{Stages: testCase.input}})
 			if want := []byte(testCase.output); !bytes.Equal(got, want) {
 				t.Errorf("Input: %#v; (GOT): %#q; (WNT): %#q", testCase.input, got, want)
 			}
