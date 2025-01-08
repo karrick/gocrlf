@@ -1,3 +1,9 @@
+# Add Writer that does the symmetric operation Reader
+
+Consider creating a Writer that when written to, when it encounters a CRLF it only writes LF.
+
+It should properly handle cases where final byte of a Write operation is CR and first byte of next Write operation is LF.
+
 # plain
 
 ## CRLFfromLF
